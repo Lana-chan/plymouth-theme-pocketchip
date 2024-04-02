@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=pocketchip
+Description=PocketCHIP themed boot animation
+Comment=By maple "mavica" syrup <maple@maple.pet>
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/pocketchip
+ScriptFile=/usr/share/plymouth/themes/pocketchip/pocketchip.script

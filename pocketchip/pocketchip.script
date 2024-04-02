@@ -1,0 +1,147 @@
+// Screen size
+screen.w = Window.GetWidth(0);
+screen.h = Window.GetHeight(0);
+screen.half.w = Window.GetWidth(0) / 2;
+screen.half.h = Window.GetHeight(0) / 2;
+
+// Question prompt
+question = null;
+answer = null;
+
+// Message
+message = null;
+
+// Password prompt
+bullets = null;
+prompt = null;
+bullet.image = Image.Text("*", 1, 1, 1);
+
+// Flow
+state.status = "play";
+state.time = 0.0;
+
+// Frames
+splash.count = 43;
+throb.count = 19;
+throb.length = 35;
+
+//--------------------------------- Refresh (Logo animation) --------------------------
+
+/* decided to use only small_img. uncomment to scale
+if (screen.w > 480 && screen.h > 272) {
+	path = "large_img/";
+} else {
+	path = "small_img/";
+}*/
+path = "small_img/";
+
+# cycle through all images
+for (i = 0; i < splash.count; i++)
+	splash.image[i] = Image(path + "splash-" + i + ".png");
+for (i = 0; i < throb.count; i++)
+	throb.image[i] = Image(path + "throb-" + i + ".png");
+splash.sprite = Sprite();
+
+# set image position
+splash.x = Window.GetX() + (screen.half.w - splash.image[0].GetWidth() / 2); # Place images in the center
+splash.y = Window.GetY() + (screen.half.h - splash.image[0].GetHeight() / 2);
+splash.sprite.SetPosition(splash.x, splash.y, 0);
+
+frame = 0;
+
+fun refresh_callback() {
+	if (frame < splash.count) {
+		splash.sprite.SetImage(splash.image[frame]);
+	} else {
+		splash.sprite.SetImage(throb.image[Math.Min((frame-splash.count)%throb.length, throb.count-1)]);
+	}
+	frame++;
+}
+Plymouth.SetRefreshRate(30);
+Plymouth.SetRefreshFunction(refresh_callback);
+
+//---------------------------------------- Progress Bar -------------------------------
+
+if (Plymouth.GetMode() == "boot") {
+	progress_box.original_image = Image("white.png");
+	progress_box.image = progress_box.original_image.Scale(splash.image[0].GetWidth(), 8);
+	progress_box.sprite = Sprite();
+
+	progress_box.x = splash.x;
+	progress_box.y = splash.y + splash.image[0].GetHeight() + 16;
+	progress_box.sprite.SetPosition(progress_box.x, progress_box.y, 0);
+
+	progress_bar.original_image = Image("pink.png");
+	progress_bar.sprite = Sprite();
+	progress_bar.sprite.SetPosition(progress_box.x, progress_box.y, 1);
+
+	fun progress_callback(duration, progress) {
+		width = Math.Int(progress_box.image.GetWidth() * progress);
+		if (frame > splash.count && progress_bar.image.GetWidth() != width) {
+			progress_box.sprite.SetImage(progress_box.image);
+			progress_bar.image = progress_bar.original_image.Scale(width, progress_box.image.GetHeight());
+			progress_bar.sprite.SetImage(progress_bar.image);
+		}
+	}
+	Plymouth.SetBootProgressFunction(progress_callback);
+}
+
+//------------------------------------- Password prompt -------------------------------
+fun DisplayQuestionCallback(prompt, entry) {
+	question = null;
+	answer = null;
+
+	if (entry == "")
+		entry = "<answer>";
+
+	question.image = Image.Text(prompt, 1, 1, 1);
+	question.sprite = Sprite(question.image);
+	question.sprite.SetX(screen.half.w - question.image.GetWidth() / 2);
+	question.sprite.SetY(screen.h - 4 * question.image.GetHeight());
+
+	answer.image = Image.Text(entry, 1, 1, 1);
+	answer.sprite = Sprite(answer.image);
+	answer.sprite.SetX(screen.half.w - answer.image.GetWidth() / 2);
+	answer.sprite.SetY(screen.h - 2 * answer.image.GetHeight());
+}
+Plymouth.SetDisplayQuestionFunction(DisplayQuestionCallback);
+
+//------------------------------------- Password prompt -------------------------------
+fun DisplayPasswordCallback(nil, bulletCount) {
+	state.status = "pause";
+	totalWidth = bulletCount * bullet.image.GetWidth();
+	startPos = screen.half.w - totalWidth / 2;
+
+	prompt.image = Image.Text("Enter Password", 1, 1, 1);
+	prompt.sprite = Sprite(prompt.image);
+	prompt.sprite.SetX(screen.half.w - prompt.image.GetWidth() / 2);
+	prompt.sprite.SetY(screen.h - 4 * prompt.image.GetHeight());
+
+	// Clear all bullets (user might hit backspace)
+	bullets = null;
+	for (i = 0; i < bulletCount; i++) {
+		bullets[i].sprite = Sprite(bullet.image);
+		bullets[i].sprite.SetX(startPos + i * bullet.image.GetWidth());
+		bullets[i].sprite.SetY(screen.h - 2 * bullet.image.GetHeight());
+	}
+}
+Plymouth.SetDisplayPasswordFunction(DisplayPasswordCallback);
+
+//--------------------------- Normal display (unset all text) ----------------------
+fun DisplayNormalCallback() {
+	state.status = "play";
+	bullets = null;
+	prompt = null;
+	message = null;
+	question = null;
+	answer = null;
+}
+Plymouth.SetDisplayNormalFunction(DisplayNormalCallback);
+
+//----------------------------------------- Message --------------------------------
+fun MessageCallback(text) {
+	message.image = Image.Text(text, 1, 1, 1);
+	message.sprite = Sprite(message.image);
+	message.sprite.SetPosition(screen.half.w - message.image.GetWidth() / 2, message.image.GetHeight());
+}
+Plymouth.SetMessageFunction(MessageCallback);
